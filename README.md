@@ -121,8 +121,7 @@ Here's a glimpse of our achievements:
 
 -   **Performance Metrics**: [Include specific metrics, e.g., accuracy, F1-score, etc.]
 
-![Proof of Results](assets\score.png)\
-*Proof of our rank and performance metrics.*
+Proof of Results figure is currently unavailable.
 
 * * * * *
 

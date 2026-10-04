@@ -8,8 +8,8 @@ Detect sarcasm in Vietnamese posts where the signal may appear in **text**, **im
 | | |
 |---|---|
 | **Task** | 4-way multimodal classification |
-| **Competition** | UIT Data Science Challenge 2024 (ViMMSD-style sarcasm track) |
-| **Private leaderboard** | **10th of 43 teams** |
+| **Competition** | UIT Data Science Challenge 2024, Group B (ViMMSD) |
+| **Private leaderboard** | **10th of 43 teams** · **F1 0.4143** |
 
 ---
 
@@ -97,11 +97,17 @@ Loads per-model private-test JSON files (`visobertbeit.json`, `clip.json`, `clip
 
 ## Results
 
-| Metric | Value |
-|--------|-------|
-| **Private test rank** | **10 / 43** (UIT DSC 2024) |
+Private leaderboard, UIT Data Science Challenge 2024 Group B (team **WEBUFF**, 3 submissions, last on 11 Nov 2024). The track ranks teams by **F1**. The number in parentheses is the rank on that metric.
 
-No official accuracy or F1 scores are checked into this repository; dev-set `classification_report` cells in the notebooks were not saved with executed outputs. Leaderboard rank is the verified competition result.
+| Metric | Score | Rank on that metric |
+|--------|------:|--------------------:|
+| **F1** (ranking metric) | **0.4143** | **10** |
+| Precision | 0.4165 | 15 |
+| Recall | 0.4375 | 16 |
+
+Overall place: **10th of 43 teams**.
+
+Dev-set `classification_report` cells in the notebooks were not saved with outputs, so there is no separate local accuracy or per-class F1 in the repo. The table above is the competition leaderboard row.
 
 ---
 

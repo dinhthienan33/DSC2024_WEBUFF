@@ -1,169 +1,186 @@
-# 🎭 Multimodal Sarcasm Detection on Vietnamese Social Media Texts 🚀
+# Multimodal Sarcasm Detection (Vietnamese Social Media)
 
-Welcome to the official repository for the **Multimodal Sarcasm Detection on Vietnamese Social Media Texts** project! This project tackles the fascinating and challenging task of detecting sarcasm in Vietnamese social media content, where sarcasm can manifest in **texts**, **images**, or **both**. Leveraging cutting-edge multimodal learning techniques, we aim to mimic the human brain's ability to process information from multiple data modalities effectively.
+**Team WEBUFF — [UIT Data Science Challenge 2024](https://github.com/dinhthienan33/DSC2024_WEBUFF)**  
+Detect sarcasm in Vietnamese posts where the signal may appear in **text**, **image**, or **both**.
 
----
+![Architecture overview](docs/assets/card.png)
 
-## 🌟 **1. Introduction**
-
-### � **1.1 What is Multimodal Sarcasm Detection?**
-Multimodal learning is an exciting field in machine learning that focuses on mimicking the human brain's ability to receive and process information from various data modalities, such as text, images, and audio. One of the most challenging tasks in this domain is **detecting sarcasm in social multimedia data**. Sarcasm can exist in **statuses**, **images**, or **comments** of a post, making it a complex problem to solve. 
-
-In this task, participants are required to determine whether sarcasm is present:
-- **Only in the image**
-- **Only in the text**
-- **In both the image and text**
-- **Not present at all**
-
-### � **1.2 Challenges of the Task**
-The task presents several unique challenges:
-- **Multimodal Complexity**: Sarcasm can be expressed through a combination of text and images, requiring models to understand the interplay between these modalities.
-- **Language Specificity**: The dataset is in **Vietnamese**, adding complexity due to linguistic nuances and cultural context.
-- **Data Imbalance**: The dataset may be imbalanced, with sarcastic examples being rarer than non-sarcastic ones.
-- **Contextual Understanding**: Sarcasm often relies on context, making it difficult for models to detect without a deep understanding of the content.
-
-### 📊 **1.3 About the Data**
-The dataset consists of **Vietnamese social media posts** collected from platforms like Facebook, Instagram, and Zalo. Key highlights:
-- **Modalities**: Text (statuses, comments) and images.
-- **Size**: [e.g., 10,000 posts with text and image pairs].
-- **Labels**: Each post is labeled as:
-  - Sarcasm in text only
-  - Sarcasm in image only
-  - Sarcasm in both text and image
-  - No sarcasm
-- **Preprocessing**: [Describe any preprocessing steps, e.g., text cleaning, image resizing, etc.]
+| | |
+|---|---|
+| **Task** | 4-way multimodal classification |
+| **Competition** | UIT Data Science Challenge 2024, Group B (ViMMSD) |
+| **Private leaderboard** | **10th of 43 teams** · **F1 0.4143** |
 
 ---
 
-## 🧠 **2. Method Overview**
+## Overview
 
-Our solution achieved an impressive **rank of 10/43** on the private test set! 🎉 Here's a breakdown of our approach:
+Social-media sarcasm is inherently multimodal: a neutral caption can pair with a mocking image, or sarcasm may live only in the text. This repository contains the training and inference notebooks used by **team WEBUFF**, plus JSON predictions and a small **majority-vote ensemble** script.
 
-### 🛠️ **4.1 VisoBert + Beit Training**
-- **Model Architecture**: We combined **VisoBert** (for text understanding) and **Beit** (for image understanding) to create a robust multimodal model capable of detecting sarcasm in both text and images.
-- **Handling Imbalanced Data**: To address data imbalance, we employed techniques such as **oversampling**, **weighted loss functions**, and **data augmentation**.
-- **Parameters**: Here are the key parameters used:
-  ```python
-    {'seed_val': 0,
-    'training_size': 9724,
-    'dev_size': 1081,
-    'test_size': 1413,
-    'num_train_epochs': 10,
-    'batch_size': 32,
-    'learning_rate': 1e-05,
-    'weight_decay': 0.01,
-    'warmup_steps': 0,
-    'max_seq_length': 512}
+**Label space (4 classes):**
 
+| Label | Meaning |
+|-------|---------|
+| `text-sarcasm` | Sarcasm only in the caption/text |
+| `image-sarcasm` | Sarcasm only in the image |
+| `multi-sarcasm` | Sarcasm in both modalities |
+| `not-sarcasm` | No sarcasm |
 
-### 🎨 **4.2 CLIP (Multimodal Model) Training**
+The challenge data are **not** redistributed in this repo. Notebooks assume Kaggle datasets under paths such as `/kaggle/input/dsc2024/` (images, `vimmsd-private-test.json`, and CSV splits).
 
-- **Model Architecture**: 
-  - Utilizes the **CLIP** (Contrastive Language–Image Pretraining) model, which combines a **vision transformer (ViT)** for image encoding and a **text transformer** for text encoding.
-  - A custom **MultimodalClassifier** is added on top of CLIP to concatenate image and text features and predict sarcasm labels (e.g., sarcasm in text, image, both, or none).
-  - The model is fine-tuned end-to-end, allowing both the CLIP backbone and the classifier to adapt to the Vietnamese sarcasm detection task.
+On the full training CSV used in `visoBert_Beit.ipynb` (`train_ocr.csv`, 10,805 posts), class counts are:
 
-- **Training Details**:
-  - **Training Parameters**:
-    - **Epochs**: 30
-    - **Batch Size**: 256
-    - **Learning Rate**: 1e-2
-    - **Weight Decay**: 0.001 (for regularization)
-    - **Warmup Steps**: 2000 (for learning rate scheduling)
-  - **Optimizer**: AdamW with cosine learning rate scheduling.
-  - **Loss Function**: CrossEntropyFocalLoss with class weights to handle imbalanced data.
-  - **Mixed Precision Training**: Enabled using `torch.amp` for faster training and reduced memory usage.
-  - **Gradient Clipping**: Applied with a max norm of 1.0 to prevent exploding gradients.
-  - **Device**: Training is performed on GPU (if available) for efficient computation.
+| Label | Count |
+|-------|------:|
+| `not-sarcasm` | 6,062 |
+| `multi-sarcasm` | 4,224 |
+| `image-sarcasm` | 442 |
+| `text-sarcasm` | 77 |
 
-- **Key Highlights**:
-  - **Fine-Tuning**: The entire CLIP model is fine-tuned, including both the vision and text transformers, to adapt to the specific nuances of Vietnamese social media data.
-  - **Imbalanced Data Handling**: Class weights are used in the loss function to address the imbalance between sarcasm and non-sarcasm examples.
-  - **Scalability**: The architecture is designed to handle large-scale datasets and can be extended to other multimodal tasks.
+---
 
-- **Training Workflow**:
-  1. **Data Preparation**:
-     - The dataset is loaded and preprocessed, with images and texts tokenized using CLIP's tokenizer.
-     - A custom `MultimodalDataset` and `DataLoader` are used to handle batching and oversampling for imbalanced classes.
-  2. **Model Training**:
-     - The model is trained for 30 epochs, with each epoch iterating over the entire dataset.
-     - Mixed precision training and gradient clipping are applied to optimize training efficiency and stability.
-  3. **Evaluation**:
-     - After each epoch, the average loss and learning rate are logged to monitor training progress.
-  4. **Model Saving**:
-     - The model's state is saved after training for future inference or further fine-tuning.
+## Approach
 
-- **Performance**:
-  - The model achieves competitive performance on the Vietnamese sarcasm detection task, leveraging CLIP's multimodal capabilities and fine-tuning on the specific dataset.
+Two independent models are trained, then combined with **majority voting** at inference time.
 
-This approach ensures robust and efficient training for multimodal sarcasm detection, making it suitable for real-world applications on Vietnamese social media platforms.
+```mermaid
+flowchart LR
+  subgraph inputs [Input post]
+    T[Text caption]
+    I[Image]
+  end
 
-### 🤝 **4.3 Ensemble Method (Voting)**
+  subgraph branchA [Branch 1: ViSoBERT + BEiT]
+    VB[ViSoBERT text encoder]
+    BE[BEiT image encoder]
+    F1[Concat + MLP classifier]
+    VB --> F1
+    BE --> F1
+  end
 
--   **Ensemble Strategy**: To further enhance performance, we combined predictions from **VisoBert+Beit** and **CLIP** using a **voting mechanism**. This approach allowed us to make more robust and accurate decisions by leveraging the strengths of both models.
+  subgraph branchB [Branch 2: NLLB-CLIP + head]
+    CL[nllb-clip-large-siglip encoders]
+    H[MLP + linear classifier]
+    CL --> H
+  end
 
--   **Diagram Instruction**: Here's how to visualize the ensemble method:
+  T --> VB
+  T --> CL
+  I --> BE
+  I --> CL
 
-    1.  Draw two boxes representing **VisoBert+Beit** and **CLIP**.
+  F1 --> V[Majority vote]
+  H --> V
+  V --> O[4-class label]
+```
 
-    2.  Connect both boxes to a third box labeled **"Ensemble Voting"**.
+### Branch 1: `visoBert_Beit.ipynb`
 
-    3.  Add arrows from the ensemble box to the final output.
+- **Text:** [uitnlp/visobert](https://huggingface.co/uitnlp/visobert) (`[CLS]` features).
+- **Image:** [microsoft/beit-base-patch16-224](https://huggingface.co/microsoft/beit-base-patch16-224) (`[CLS]` features).
+- **Fusion:** concatenate features → MLP (512 hidden, dropout 0.3) → linear 4-class head.
+- **Training:** AdamW, cosine schedule, mixed precision (`torch.cuda.amp`), `CrossEntropyLoss`; 90/10 train/dev split (`random_state=42`). Documented run settings in the notebook include 10 epochs, batch size 32, learning rate `1e-5`, `max_seq_length` 512.
+- **Text prep:** lowercasing, emoji normalization, light cleaning (see notebook).
 
-* * * * *
+### Branch 2: `nllb-clip-large-siglip_v2.ipynb`
 
-📈 **3\. Results**
-------------------
+- **Backbone:** OpenCLIP `nllb-clip-large-siglip` (pretrained `mrl`); image/text towers are **frozen**; features are concatenated and passed through a **trainable** MLP + classifier.
+- **Training:** `CrossEntropyFocalLoss` (pytorch-toolbelt) with class weights, `WeightedRandomSampler` oversampling, AdamW + cosine warmup (2,000 steps), mixed precision, gradient clipping (`max_norm=1.0`).
+- **Hyperparameters in notebook:** 30 epochs, batch size 256, learning rate `1e-2`, weight decay `0.001`.
+- **Data:** `train_cluster.csv` on Kaggle (same label schema).
 
-Here's a glimpse of our achievements:
+### Ensemble: `ensemble/main.ipynb`
 
--   **Rank**: 10/43 on the private test set.
+Loads per-model private-test JSON files (`visobertbeit.json`, `clip.json`, `clipv2.json`), aligns predictions by sample ID, and applies **majority vote**. Output is written to `ensemble/results.json` (`phase`: `test`, 1,504 samples).
 
--   **Performance Metrics**: [Include specific metrics, e.g., accuracy, F1-score, etc.]
+---
 
-Proof of Results figure is currently unavailable.
+## Results
 
-* * * * *
+Private leaderboard, UIT Data Science Challenge 2024 Group B (team **WEBUFF**, 3 submissions, last on 11 Nov 2024). The track ranks teams by **F1**. The number in parentheses is the rank on that metric.
 
-🌱 **4\. Contribution**
------------------------
+| Metric | Score | Rank on that metric |
+|--------|------:|--------------------:|
+| **F1** (ranking metric) | **0.4143** | **10** |
+| Precision | 0.4165 | 15 |
+| Recall | 0.4375 | 16 |
 
-Our work contributes to the field by:
+Overall place: **10th of 43 teams**.
 
--   Introducing a novel combination of **VisoBert**, **Beit**, and **CLIP** for **multimodal sarcasm detection** in Vietnamese social media data.
+Dev-set `classification_report` cells in the notebooks were not saved with outputs, so there is no separate local accuracy or per-class F1 in the repo. The table above is the competition leaderboard row.
 
--   Demonstrating the effectiveness of ensemble methods in handling **multimodal and imbalanced data**.
+---
 
--   Providing a scalable and reproducible solution for **sarcasm detection in low-resource languages** like Vietnamese.
+## Repository structure
 
-* * * * *
+```
+DSC2024_WEBUFF/
+├── visoBert_Beit.ipynb          # ViSoBERT + BEiT training & inference
+├── nllb-clip-large-siglip_v2.ipynb  # OpenCLIP classifier training & inference
+├── ensemble/
+│   ├── main.ipynb               # Majority-vote ensemble
+│   ├── visobertbeit.json        # Branch-1 test predictions
+│   ├── clip.json                # Branch-2 predictions (run A)
+│   ├── clipv2.json              # Branch-2 predictions (run B)
+│   └── results.json             # Final voted predictions
+├── docs/
+│   └── assets/
+│       └── card.png             # README / portfolio card (1600×900)
+└── README.md
+```
 
-📜 **5\. License**
-------------------
+---
 
-This project is licensed under the **[License Name, e.g., MIT License]**. Feel free to use, modify, and distribute the code as per the license terms.
+## Setup and usage
 
-* * * * *
+Training was run on **GPU** (Kaggle: Tesla T4). Reproduce by uploading the notebooks to Kaggle or a similar environment with the competition datasets attached.
 
-🗺️ **Outline**
----------------
+### Dependencies (install as in notebooks)
 
-1.  **Introduction**
+**ViSoBERT + BEiT** (typical stack):
 
-    -   1.1 What is Multimodal Sarcasm Detection?
+```bash
+pip install torch torchvision transformers scikit-learn pandas pillow tqdm matplotlib
+```
 
-    -   1.2 Challenges of the Task
+**NLLB-CLIP branch:**
 
-    -   1.3 About the Data
+```bash
+pip install torch==2.4.0 torchvision==0.19.0 --index-url https://download.pytorch.org/whl/cu124
+pip install open_clip_torch
+pip install git+https://github.com/BloodAxe/pytorch-toolbelt.git
+pip install transformers scikit-learn pandas pillow tqdm
+```
 
-2.  **Method Overview**
+### Workflow
 
-    -   4.1 VisoBert + Beit Training
+1. **Train or load weights** in each notebook (paths point to Kaggle inputs; adjust `IMAGE_*_FOLDER` and CSV paths for your environment).
+2. **Export predictions** as JSON with schema `{"results": {"<id>": "<label>", ...}, "phase": "test"}`.
+3. **Ensemble:** place prediction files in `ensemble/`, open `ensemble/main.ipynb`, run all cells (or execute the voting logic in `main.ipynb`) to produce `ensemble/results.json`.
 
-    -   4.2 CLIP (Multimodal Model) Training
+Pretrained weights are **not** included in this repository; obtain them from your own training runs or competition artifacts.
 
-    -   4.3 Ensemble Method (Voting)
+---
 
-* * * * *
+## Team and contact
 
-For questions, collaborations, or just to say hi, feel free to reach out at dithienan03@gmail.com. Let's build the future of AI together! 🚀
+**Team WEBUFF** — UIT Data Science Challenge 2024.  
+Maintainer: [Đinh Thiên Ân](https://github.com/dinhthienan33) · [Portfolio](https://portfolio.dinhthienan203.id.vn)  
+Questions: dithienan03@gmail.com
+
+---
+
+## Citation
+
+No paper or technical report is bundled with this repository. If you use this code, please cite the UIT Data Science Challenge 2024 and link to this repo:
+
+```text
+Đinh Thiên Ân et al. (Team WEBUFF). Multimodal Sarcasm Detection for Vietnamese Social Media.
+UIT Data Science Challenge 2024. https://github.com/dinhthienan33/DSC2024_WEBUFF
+```
+
+---
+
+## License
+
+License: **not yet specified**. Add a `LICENSE` file in the repository when terms are chosen.
